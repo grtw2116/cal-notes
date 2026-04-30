@@ -1,0 +1,45 @@
+name: CalNotes
+
+options:
+  bundleIdPrefix: com.grtw2116
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+targets:
+  CalNotes:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources
+    resources:
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_NAME: CalNotes
+        ALWAYS_SEARCH_USER_PATHS: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.grtw2116.CalNotes
+        SWIFT_VERSION: "5.9"
+        INFOPLIST_FILE: Resources/Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+    dependencies:
+      - sdk: EventKit.framework
+
+schemes:
+  CalNotes:
+    build:
+      targets:
+        CalNotes: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>cal-notes · Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #E8E2D2; }
+  body {
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    color: #1c1c1e;
+    -webkit-font-smoothing: antialiased;
+  }
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+  /* sketch palette */
+  :root {
+    --paper: #FAF6EC;
+    --paper-2: #F2EBDB;
+    --ink: #2A2722;
+    --ink-2: #5C554A;
+    --ink-3: #8A8273;
+    --rule: #C9C0AB;
+    --rule-2: #E2DBC8;
+    --accent: oklch(0.65 0.12 50);   /* warm orange */
+    --accent-soft: oklch(0.92 0.04 70);
+    --highlight: oklch(0.92 0.08 95); /* yellow highlighter */
+    --mint: oklch(0.88 0.06 160);
+    --rose: oklch(0.88 0.06 25);
+  }
+
+  /* a soft hand-drawn border helper */
+  .sketch-border {
+    border: 1.6px solid var(--ink);
+    border-radius: 14px;
+    box-shadow: 1.5px 1.5px 0 var(--ink);
+  }
+  .sketch-border-soft {
+    border: 1.4px solid var(--ink-2);
+    border-radius: 12px;
+  }
+  .hand { font-family: "Caveat", "Yomogi", cursive; }
+  .hand-jp { font-family: "Yomogi", "Klee One", cursive; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .ink { color: var(--ink); }
+  .ink-2 { color: var(--ink-2); }
+  .ink-3 { color: var(--ink-3); }
+  .accent { color: var(--accent); }
+
+  /* highlighter underline */
+  .hl {
+    background: linear-gradient(180deg, transparent 55%, var(--highlight) 55% 92%, transparent 92%);
+    padding: 0 2px;
+  }
+
+  /* paper texture (subtle) */
+  .paper-bg {
+    background:
+      radial-gradient(circle at 20% 10%, rgba(180,160,120,0.06) 0 1px, transparent 1px),
+      radial-gradient(circle at 70% 60%, rgba(180,160,120,0.05) 0 1px, transparent 1px),
+      var(--paper);
+    background-size: 7px 7px, 11px 11px, auto;
+  }
+
+  /* ruled lines for note paper */
+  .ruled {
+    background-image: linear-gradient(transparent 95%, var(--rule-2) 95%);
+    background-size: 100% 22px;
+  }
+
+  /* squiggle button */
+  .btn-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: 1.5px 1.5px 0 var(--ink);
+    font-family: "Klee One", system-ui;
+    font-size: 13px;
+  }
+  .btn-pill.solid { background: var(--ink); color: var(--paper); }
+  .btn-pill.accent { background: var(--accent); color: white; border-color: var(--ink); }
+
+  /* annotation arrows / labels */
+  .annot {
+    font-family: "Caveat", cursive;
+    color: var(--accent);
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  /* blocky placeholder image */
+  .placeholder-img {
+    background:
+      repeating-linear-gradient(135deg,
+        rgba(0,0,0,0.06) 0 2px, transparent 2px 8px),
+      var(--paper-2);
+    border: 1.4px solid var(--ink-2);
+    border-radius: 8px;
+    color: var(--ink-3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+  }
+
+  /* devicechrome offset for wireframe paper */
+  .device-paper { background: var(--paper); height: 100%; }
+
+  /* small caps section */
+  .eyebrow {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  /* canvas surface customization */
+  body, html { background: #E8E2D2; }
+
+  /* hide some scrollbars in artboards */
+  .device-paper::-webkit-scrollbar { width: 0; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="screens-home.jsx"></script>
+<script type="text/babel" src="screens-detail.jsx"></script>
+<script type="text/babel" src="screens-past.jsx"></script>
+<script type="text/babel" src="screens-summary.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
