@@ -25,8 +25,14 @@ targets:
         INFOPLIST_FILE: Resources/Info.plist
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+        CODE_SIGN_STYLE: Automatic
+    configFiles:
+      Debug: local.xcconfig
+      Release: local.xcconfig
     dependencies:
       - sdk: EventKit.framework
+      - sdk: FoundationModels.framework
+        weak: true
 
 schemes:
   CalNotes:

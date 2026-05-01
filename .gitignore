@@ -64,3 +64,6 @@ fastlane/test_output
 # xcodegen — generated project file (regenerate with `xcodegen generate`)
 *.xcodeproj/
 
+
+# Local signing config (contains personal DEVELOPMENT_TEAM — do not commit)
+local.xcconfig
