@@ -5,7 +5,7 @@ import SwiftData
 struct CalNotesApp: App {
     var body: some Scene {
         WindowGroup {
-            TodayView()
+            ContentView()
         }
         .modelContainer(for: JournalEntry.self)
     }

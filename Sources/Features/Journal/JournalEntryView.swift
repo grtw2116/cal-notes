@@ -1,40 +1,19 @@
 import SwiftUI
 import SwiftData
-import EventKit
 
 private let moodOptions: [(emoji: String, label: String)] = [
     ("🤩", "最高"), ("😊", "良い"), ("😐", "普通"), ("😔", "しんどい"), ("😤", "ストレス"),
 ]
 
-struct EventDetailView: View {
-    let event: EKEvent
-
-    @Environment(\.modelContext) private var modelContext
-    @Query private var entries: [JournalEntry]
-    @State private var bodyText = ""
-    @State private var selectedMood: String? = nil
-    @State private var selectedTags: [String] = []
-    @State private var tagInput = ""
+struct JournalEntryView: View {
+    @Bindable var entry: JournalEntry
     @FocusState private var isEditorFocused: Bool
-
-    init(event: EKEvent) {
-        self.event = event
-        let id = event.eventIdentifier ?? ""
-        _entries = Query(filter: #Predicate<JournalEntry> { $0.externalEventId == id })
-    }
-
-    private var entry: JournalEntry? { entries.first }
-
-    private var hasChanges: Bool {
-        bodyText != (entry?.body ?? "")
-            || selectedMood != entry?.mood
-            || selectedTags != (entry?.tags ?? [])
-    }
+    @State private var tagInput = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                eventHeader
+                entryHeader
                     .padding(.horizontal)
                     .padding(.top)
 
@@ -50,51 +29,35 @@ struct EventDetailView: View {
 
                 Divider().padding(.vertical, 12).padding(.horizontal)
 
-                TextEditor(text: $bodyText)
+                TextEditor(text: $entry.body)
                     .focused($isEditorFocused)
                     .font(.body)
-                    .frame(minHeight: 300)
+                    .frame(minHeight: 200)
                     .scrollDisabled(true)
                     .padding(.horizontal, 18)
+                    .onChange(of: entry.body) { _, _ in entry.updatedAt = Date() }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("完了") { save() }
-                    .disabled(!hasChanges)
-            }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("完了") {
-                    isEditorFocused = false
-                    save()
-                }
+                Button("閉じる") { isEditorFocused = false }
             }
-        }
-        .onAppear {
-            bodyText = entry?.body ?? ""
-            selectedMood = entry?.mood
-            selectedTags = entry?.tags ?? []
         }
     }
 
-    private var eventHeader: some View {
+    private var entryHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(eventDateRange)
+            Text(dateRangeString)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .tracking(0.4)
-
-            Text(event.title ?? "（タイトルなし）")
+            Text(entry.eventTitleSnapshot)
                 .font(.title2.bold())
-
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(Color(cgColor: event.calendar.cgColor))
-                    .frame(width: 8, height: 8)
-                Text(eventSubtitle)
+            if let loc = entry.eventLocationSnapshot, !loc.isEmpty {
+                Text(loc)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -109,13 +72,14 @@ struct EventDetailView: View {
             HStack(spacing: 4) {
                 ForEach(moodOptions, id: \.emoji) { option in
                     Button {
-                        selectedMood = selectedMood == option.emoji ? nil : option.emoji
+                        entry.mood = entry.mood == option.emoji ? nil : option.emoji
+                        entry.updatedAt = Date()
                     } label: {
                         Text(option.emoji)
                             .font(.title2)
                             .padding(6)
                             .background(
-                                selectedMood == option.emoji
+                                entry.mood == option.emoji
                                     ? Color.accentColor.opacity(0.2)
                                     : Color.clear,
                                 in: Circle()
@@ -132,16 +96,17 @@ struct EventDetailView: View {
             Text("タグ")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            if !selectedTags.isEmpty {
+            if !entry.tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        ForEach(selectedTags, id: \.self) { tag in
+                        ForEach(entry.tags, id: \.self) { tag in
                             HStack(spacing: 3) {
                                 Text("#\(tag)")
                                     .font(.caption)
                                 Button {
                                     withAnimation {
-                                        selectedTags.removeAll { $0 == tag }
+                                        entry.tags.removeAll { $0 == tag }
+                                        entry.updatedAt = Date()
                                     }
                                 } label: {
                                     Image(systemName: "xmark")
@@ -169,48 +134,19 @@ struct EventDetailView: View {
 
     private func addTag() {
         let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, !selectedTags.contains(trimmed) else {
+        guard !trimmed.isEmpty, !entry.tags.contains(trimmed) else {
             tagInput = ""
             return
         }
-        selectedTags.append(trimmed)
+        entry.tags.append(trimmed)
+        entry.updatedAt = Date()
         tagInput = ""
     }
 
-    private var eventDateRange: String {
+    private var dateRangeString: String {
         let fmt = DateIntervalFormatter()
         fmt.dateStyle = .medium
         fmt.timeStyle = .short
-        return fmt.string(from: event.startDate, to: event.endDate)
-    }
-
-    private var eventSubtitle: String {
-        [event.calendar.title, event.location]
-            .compactMap { $0 }
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
-    }
-
-    private func save() {
-        guard hasChanges else { return }
-        if let existing = entry {
-            existing.body = bodyText
-            existing.mood = selectedMood
-            existing.tags = selectedTags
-            existing.updatedAt = Date()
-        } else {
-            let newEntry = JournalEntry(
-                externalEventId: event.eventIdentifier ?? UUID().uuidString,
-                calendarSource: event.calendar.source.title,
-                eventTitleSnapshot: event.title ?? "",
-                eventStartSnapshot: event.startDate,
-                eventEndSnapshot: event.endDate,
-                eventLocationSnapshot: event.location,
-                body: bodyText
-            )
-            newEntry.mood = selectedMood
-            newEntry.tags = selectedTags
-            modelContext.insert(newEntry)
-        }
+        return fmt.string(from: entry.eventStartSnapshot, to: entry.eventEndSnapshot)
     }
 }
