@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import EventKit
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
@@ -10,7 +9,7 @@ private let moodOptions: [(emoji: String, label: String)] = [
 ]
 
 struct EventDetailView: View {
-    let event: EKEvent
+    let event: AppEvent
 
     @Environment(\.modelContext) private var modelContext
     @Query private var entries: [JournalEntry]
@@ -27,9 +26,9 @@ struct EventDetailView: View {
     @State private var isLoadingPrompt = false
     @State private var promptError: String?
 
-    init(event: EKEvent) {
+    init(event: AppEvent) {
         self.event = event
-        let id = event.eventIdentifier ?? ""
+        let id = event.id
         _entries = Query(filter: #Predicate<JournalEntry> { $0.externalEventId == id })
     }
 
@@ -115,12 +114,12 @@ struct EventDetailView: View {
                 .textCase(.uppercase)
                 .tracking(0.4)
 
-            Text(event.title ?? "（タイトルなし）")
+            Text(event.title)
                 .font(.title2.bold())
 
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(cgColor: event.calendar.cgColor))
+                    .fill(event.calendarColor.swiftUIColor)
                     .frame(width: 8, height: 8)
                 Text(eventSubtitle)
                     .font(.caption)
@@ -239,7 +238,7 @@ struct EventDetailView: View {
     }
 
     private var eventSubtitle: String {
-        [event.calendar.title, event.location]
+        [event.calendarTitle, event.location]
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: " · ")
@@ -254,9 +253,9 @@ struct EventDetailView: View {
             existing.updatedAt = Date()
         } else {
             let newEntry = JournalEntry(
-                externalEventId: event.eventIdentifier ?? UUID().uuidString,
-                calendarSource: event.calendar.source.title,
-                eventTitleSnapshot: event.title ?? "",
+                externalEventId: event.id,
+                calendarSource: event.calendarSource,
+                eventTitleSnapshot: event.title,
                 eventStartSnapshot: event.startDate,
                 eventEndSnapshot: event.endDate,
                 eventLocationSnapshot: event.location,
@@ -289,7 +288,7 @@ struct EventDetailView: View {
         do {
             let service = try makeAIService(model: model, apiKey: apiKey)
             writingPromptText = try await service.generateWritingPrompts(
-                eventTitle: event.title ?? "",
+                eventTitle: event.title,
                 startDate: event.startDate,
                 location: event.location
             )

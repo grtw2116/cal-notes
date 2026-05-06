@@ -2,3 +2,7 @@
 // Find your Team ID at: https://developer.apple.com/account → Membership
 // or run: security find-identity -v -p codesigning
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
+
+// Enable realistic 3-month demo calendar + journal data.
+// DEMO_DATA_SWIFT_FLAGS = DEMO_DATA
+DEMO_DATA_SWIFT_FLAGS =

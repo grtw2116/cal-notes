@@ -7,6 +7,11 @@ final class CalendarService {
     private(set) var authorizationStatus: EKAuthorizationStatus = .notDetermined
 
     func requestAccess() async throws {
+        if AppEnvironment.usesDemoData {
+            authorizationStatus = .fullAccess
+            return
+        }
+
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)
         guard authorizationStatus != .fullAccess else { return }
 
@@ -17,16 +22,35 @@ final class CalendarService {
         }
     }
 
-    func events(for date: Date) -> [EKEvent] {
+    func events(for date: Date) -> [AppEvent] {
+        if AppEnvironment.usesDemoData {
+            return demoEvents(for: date)
+        }
+
         let cal = Calendar.current
         let start = cal.startOfDay(for: date)
         let end = cal.date(byAdding: .day, value: 1, to: start)!
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-        return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+        return store.events(matching: predicate)
+            .sorted { $0.startDate < $1.startDate }
+            .map { event in
+                AppEvent(
+                    id: event.eventIdentifier ?? UUID().uuidString,
+                    title: event.title ?? "（タイトルなし）",
+                    startDate: event.startDate,
+                    endDate: event.endDate,
+                    location: event.location,
+                    calendarTitle: event.calendar.title,
+                    calendarSource: event.calendar.source.title,
+                    calendarColor: eventColor(from: event)
+                )
+            }
     }
 
 #if DEBUG
     func insertTestEvents() async {
+        guard !AppEnvironment.usesDemoData else { return }
+
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         let defaultCalendar = store.defaultCalendarForNewEvents
@@ -49,6 +73,22 @@ final class CalendarService {
         }
     }
 #endif
+
+    private func demoEvents(for date: Date) -> [AppEvent] {
+        DemoDataFactory.shared.events
+            .filter { Calendar.current.isDate($0.startDate, inSameDayAs: date) }
+            .sorted { $0.startDate < $1.startDate }
+    }
+
+    private func eventColor(from event: EKEvent) -> EventColor {
+        guard
+            let components = event.calendar.cgColor.components,
+            components.count >= 3
+        else {
+            return .work
+        }
+        return EventColor(red: components[0], green: components[1], blue: components[2])
+    }
 
     enum CalendarError: LocalizedError {
         case accessDenied
