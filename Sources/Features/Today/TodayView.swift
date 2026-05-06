@@ -60,17 +60,7 @@ struct TodayView: View {
     }
 
     private var eventList: some View {
-        List(viewModel.events) { event in
-            NavigationLink {
-                EventDetailView(event: event)
-            } label: {
-                EventRow(
-                    event: event,
-                    hasEntry: entries.contains { $0.externalEventId == event.id }
-                )
-            }
-        }
-        .safeAreaInset(edge: .top) {
+        List {
             if unwrittenCount > 0 {
                 HStack {
                     Text("\(viewModel.events.count)件 · ")
@@ -84,13 +74,13 @@ struct TodayView: View {
                 .listRowSeparator(.hidden)
             }
 
-            ForEach(viewModel.events, id: \.eventIdentifier) { event in
+            ForEach(viewModel.events) { event in
                 NavigationLink {
                     EventDetailView(event: event)
                 } label: {
                     EventRow(
                         event: event,
-                        hasEntry: entries.contains { $0.externalEventId == event.eventIdentifier }
+                        hasEntry: entries.contains { $0.externalEventId == event.id }
                     )
                 }
             }
