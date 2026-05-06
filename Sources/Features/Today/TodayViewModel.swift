@@ -1,9 +1,8 @@
 import Foundation
-import EventKit
 
 @Observable
 final class TodayViewModel {
-    var events: [EKEvent] = []
+    var events: [AppEvent] = []
     var selectedDate: Date = .now
     var isLoading = false
     var accessError: Error?

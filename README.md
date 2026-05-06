@@ -33,3 +33,17 @@
 
 現在は仕様策定フェーズです。  
 実装開始時は `docs/requirements.md` と `docs/roadmap.md` を正本として扱います。
+
+## Development
+
+`local.xcconfig` の `DEMO_DATA_SWIFT_FLAGS` に `DEMO_DATA` を設定すると、実カレンダーの代わりに直近 3 か月分のリアルなダミー予定と日記データでアプリを起動できます。
+
+```xcconfig
+DEMO_DATA_SWIFT_FLAGS = DEMO_DATA
+```
+
+このモードでは:
+
+- `Today` はダミー予定を表示
+- `Journal` / `Summary` は初回起動時に SwiftData へシードされたダミー日記を表示
+- `EventKit` 権限要求はスキップ

@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import EventKit
 
 struct TodayView: View {
     @State private var viewModel = TodayViewModel()
@@ -8,7 +7,7 @@ struct TodayView: View {
 
     private var unwrittenCount: Int {
         viewModel.events.filter { event in
-            !entries.contains { $0.externalEventId == event.eventIdentifier }
+            !entries.contains { $0.externalEventId == event.id }
         }.count
     }
 
@@ -61,7 +60,17 @@ struct TodayView: View {
     }
 
     private var eventList: some View {
-        List {
+        List(viewModel.events) { event in
+            NavigationLink {
+                EventDetailView(event: event)
+            } label: {
+                EventRow(
+                    event: event,
+                    hasEntry: entries.contains { $0.externalEventId == event.id }
+                )
+            }
+        }
+        .safeAreaInset(edge: .top) {
             if unwrittenCount > 0 {
                 HStack {
                     Text("\(viewModel.events.count)件 · ")
@@ -105,7 +114,7 @@ struct TodayView: View {
 }
 
 struct EventRow: View {
-    let event: EKEvent
+    let event: AppEvent
     let hasEntry: Bool
 
     var body: some View {
@@ -116,11 +125,11 @@ struct EventRow: View {
                 .frame(width: 44, alignment: .leading)
 
             Circle()
-                .fill(Color(cgColor: event.calendar.cgColor))
+                .fill(event.calendarColor.swiftUIColor)
                 .frame(width: 8, height: 8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(event.title ?? "（タイトルなし）")
+                Text(event.title)
                     .font(.body.weight(.medium))
 
                 if let location = event.location, !location.isEmpty {
