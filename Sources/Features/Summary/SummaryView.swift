@@ -5,11 +5,25 @@ struct SummaryView: View {
     @Query(sort: \JournalEntry.eventStartSnapshot, order: .reverse)
     private var entries: [JournalEntry]
 
+    @Query(sort: \AISummary.createdAt, order: .reverse)
+    private var aiSummaries: [AISummary]
+
+    @Environment(\.modelContext) private var modelContext
+    @AppStorage("anthropicAPIKey") private var apiKey = ""
+    @AppStorage("aiModel") private var model = "claude-haiku-4-5-20251001"
+
+    @State private var isGenerating = false
+    @State private var generateError: String?
+
     private let cal = Calendar.current
 
+    private var thisWeekStart: Date {
+        cal.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
+    }
+
     private var thisWeekEntries: [JournalEntry] {
-        let start = cal.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
-        return entries.filter { $0.eventStartSnapshot >= start }
+        let end = cal.date(byAdding: .weekOfYear, value: 1, to: thisWeekStart)!
+        return entries.filter { $0.eventStartSnapshot >= thisWeekStart && $0.eventStartSnapshot < end }
     }
 
     private var thisMonthEntries: [JournalEntry] {
@@ -35,7 +49,7 @@ struct SummaryView: View {
 
     private var weeklyGroups: [(label: String, count: Int)] {
         var result: [(label: String, count: Int)] = []
-        var weekStart = cal.dateInterval(of: .weekOfYear, for: .now)?.start ?? .now
+        var weekStart = thisWeekStart
         for i in 0..<4 {
             let weekEnd = cal.date(byAdding: .weekOfYear, value: 1, to: weekStart)!
             let count = entries.filter { $0.eventStartSnapshot >= weekStart && $0.eventStartSnapshot < weekEnd }.count
@@ -44,6 +58,10 @@ struct SummaryView: View {
             weekStart = cal.date(byAdding: .weekOfYear, value: -1, to: weekStart)!
         }
         return result
+    }
+
+    private var latestWeeklySummary: AISummary? {
+        aiSummaries.first { $0.summaryType == "weekly" && $0.rangeStart >= thisWeekStart }
     }
 
     var body: some View {
@@ -59,6 +77,7 @@ struct SummaryView: View {
                     List {
                         statsSection
                         weeklySection
+                        aiSummarySection
                         if !topTags.isEmpty { tagSection }
                         if !moodCounts.isEmpty { moodSection }
                     }
@@ -105,6 +124,55 @@ struct SummaryView: View {
         }
     }
 
+    @ViewBuilder
+    private var aiSummarySection: some View {
+        Section {
+            if isGenerating {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("AIサマリーを生成中…")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Button {
+                    Task { await generateWeeklySummary() }
+                } label: {
+                    Label("今週のAIサマリーを生成", systemImage: "sparkles")
+                }
+                .disabled(apiKey.isEmpty || thisWeekEntries.isEmpty)
+            }
+
+            if let error = generateError {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text("AI サマリー")
+        } footer: {
+            if apiKey.isEmpty {
+                Text("設定タブでAPIキーを入力してください")
+            } else if thisWeekEntries.isEmpty {
+                Text("今週の日記エントリがありません")
+            }
+        }
+
+        if let summary = latestWeeklySummary {
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(summary.body)
+                        .font(.body)
+                    Text("生成: \(summary.createdAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("今週のサマリー")
+            }
+        }
+    }
+
     private var tagSection: some View {
         Section("よく使うタグ") {
             ForEach(topTags, id: \.tag) { item in
@@ -124,6 +192,30 @@ struct SummaryView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    private func generateWeeklySummary() async {
+        guard !apiKey.isEmpty else { return }
+        isGenerating = true
+        generateError = nil
+        defer { isGenerating = false }
+
+        let service = AnthropicAIService(apiKey: apiKey, model: model)
+        let weekEnd = cal.date(byAdding: .weekOfYear, value: 1, to: thisWeekStart)!
+
+        do {
+            let text = try await service.generateWeeklySummary(entries: thisWeekEntries, weekStart: thisWeekStart)
+            let summary = AISummary(
+                rangeStart: thisWeekStart,
+                rangeEnd: weekEnd,
+                summaryType: "weekly",
+                sourceEntryIds: thisWeekEntries.map(\.id),
+                body: text
+            )
+            modelContext.insert(summary)
+        } catch {
+            generateError = error.localizedDescription
         }
     }
 }
