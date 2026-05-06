@@ -7,6 +7,6 @@ struct CalNotesApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: JournalEntry.self)
+        .modelContainer(for: [JournalEntry.self, AISummary.self])
     }
 }
