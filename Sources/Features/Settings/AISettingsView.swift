@@ -23,24 +23,17 @@ struct AISettingsView: View {
                 Text("オンデバイスで動作するため、API キー不要でプライバシーが保護されます。Apple Intelligence 対応デバイスと iOS 26 以上が必要です。")
             }
 
-            // Anthropic section
-            Section {
-                Picker("モデル", selection: $model) {
-                    // Apple model is handled by the toggle above.
-                    // This entry makes the selection valid when "apple-on-device" is active.
-                    if model == "apple-on-device" {
-                        Text("Apple Foundation Model").tag("apple-on-device")
-                    }
-                    ForEach(anthropicModels, id: \.id) { option in
-                        Text(option.label).tag(option.id)
-                    }
-                }
-                .disabled(model == "apple-on-device")
-            } header: {
-                Text("Anthropic モデル")
-            }
-
             if model != "apple-on-device" {
+                Section {
+                    Picker("モデル", selection: $model) {
+                        ForEach(anthropicModels, id: \.id) { option in
+                            Text(option.label).tag(option.id)
+                        }
+                    }
+                } header: {
+                    Text("Anthropic モデル")
+                }
+
                 Section {
                     SecureField("sk-ant-...", text: $apiKey)
                         .autocorrectionDisabled()
