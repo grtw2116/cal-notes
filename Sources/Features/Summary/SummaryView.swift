@@ -64,6 +64,10 @@ struct SummaryView: View {
         aiSummaries.first { $0.summaryType == "weekly" && $0.rangeStart >= thisWeekStart }
     }
 
+    private var canGenerateSummary: Bool {
+        !thisWeekEntries.isEmpty && (model == "apple-on-device" || !apiKey.isEmpty)
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -139,7 +143,7 @@ struct SummaryView: View {
                 } label: {
                     Label("今週のAIサマリーを生成", systemImage: "sparkles")
                 }
-                .disabled(apiKey.isEmpty || thisWeekEntries.isEmpty)
+                .disabled(!canGenerateSummary)
             }
 
             if let error = generateError {
@@ -150,7 +154,7 @@ struct SummaryView: View {
         } header: {
             Text("AI サマリー")
         } footer: {
-            if apiKey.isEmpty {
+            if model != "apple-on-device" && apiKey.isEmpty {
                 Text("設定タブでAPIキーを入力してください")
             } else if thisWeekEntries.isEmpty {
                 Text("今週の日記エントリがありません")
@@ -196,15 +200,15 @@ struct SummaryView: View {
     }
 
     private func generateWeeklySummary() async {
-        guard !apiKey.isEmpty else { return }
+        guard canGenerateSummary else { return }
         isGenerating = true
         generateError = nil
         defer { isGenerating = false }
 
-        let service = AnthropicAIService(apiKey: apiKey, model: model)
         let weekEnd = cal.date(byAdding: .weekOfYear, value: 1, to: thisWeekStart)!
 
         do {
+            let service = try makeAIService(model: model, apiKey: apiKey)
             let text = try await service.generateWeeklySummary(entries: thisWeekEntries, weekStart: thisWeekStart)
             let summary = AISummary(
                 rangeStart: thisWeekStart,

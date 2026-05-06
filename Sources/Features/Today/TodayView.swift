@@ -80,8 +80,19 @@ struct TodayView: View {
                 }
                 .font(.subheadline)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal)
-                .padding(.vertical, 4)
+                .listRowInsets(.init(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowSeparator(.hidden)
+            }
+
+            ForEach(viewModel.events, id: \.eventIdentifier) { event in
+                NavigationLink {
+                    EventDetailView(event: event)
+                } label: {
+                    EventRow(
+                        event: event,
+                        hasEntry: entries.contains { $0.externalEventId == event.eventIdentifier }
+                    )
+                }
             }
         }
     }
